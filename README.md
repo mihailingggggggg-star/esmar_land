@@ -41,7 +41,7 @@ npm run dev                    # http://localhost:3000
 
 ```bash
 npm run build && npm start     # production-сборка
-npm test                       # 14 unit-тестов трекинга/подписи
+npm test                       # 16 unit-тестов трекинга/подписи
 ```
 
 ### Язык
@@ -116,6 +116,9 @@ npm test                       # 14 unit-тестов трекинга/подп�
 
 Клик-идентификаторы: `fbclid`, `fbc`, `fbp`, `ctwa_clid`, `gclid`, `gbraid`, `wbraid`,
 `ttclid`, `yclid`, `msclkid`, `twclid`.
+
+Cookies (whitelist): `_gcl_au`, `_gcl_aw`, `_gcl_dc`, `_ttp`, `_uetsid`, `_uetvid`,
+`_hjSessionUser_*`, `__hstc`, `_clck`, `_clsk`, `ajs_anonymous_id`, `_pin_unauth`.
 
 Контекст: `utm_source/medium/campaign/content/term/id/source_platform/creative_format`,
 `referrer`, `landing_url` (first touch), `current_url` (last touch), `_ga` client_id и

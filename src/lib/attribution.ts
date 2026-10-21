@@ -39,6 +39,11 @@ export type Attribution = {
   timezone?: string;
   screen?: string;
   device?: string;
+  /**
+   * Whitelisted third-party attribution cookies we could read in the browser
+   * (_gcl_au, _ttp, _uetsid, …). Kept for CRM/analytics, not sent to Meta.
+   */
+  cookies?: Record<string, string>;
   first_seen_at: string;
   last_seen_at?: string;
   /** server-side enrichment */
@@ -51,6 +56,38 @@ export type Attribution = {
 };
 
 const MAX = 512;
+
+/** Cookies worth keeping for attribution. Everything else is ignored. */
+export const ATTRIBUTION_COOKIE_PATTERNS: RegExp[] = [
+  /^_gcl_au$/,
+  /^_gcl_aw$/,
+  /^_gcl_dc$/,
+  /^_ttp$/,
+  /^_uetsid$/,
+  /^_uetvid$/,
+  /^_hjSessionUser_\d+$/,
+  /^__hstc$/,
+  /^_clck$/,
+  /^_clsk$/,
+  /^ajs_anonymous_id$/,
+  /^_pin_unauth$/,
+];
+
+export function isAttributionCookie(name: string): boolean {
+  return ATTRIBUTION_COOKIE_PATTERNS.some((pattern) => pattern.test(name));
+}
+
+export function sanitizeCookies(input: unknown): Record<string, string> | undefined {
+  if (!input || typeof input !== "object") return undefined;
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+    if (!isAttributionCookie(key)) continue;
+    const clean = clampString(value, 300);
+    if (clean) out[key] = clean;
+    if (Object.keys(out).length >= 12) break;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
 
 export function clampString(value: unknown, max = MAX): string | undefined {
   if (typeof value !== "string") return undefined;
@@ -110,6 +147,7 @@ export function sanitizeAttribution(input: unknown): Attribution | null {
     timezone: clampString(raw.timezone, 60),
     screen: clampString(raw.screen, 20),
     device: clampString(raw.device, 20),
+    cookies: sanitizeCookies(raw.cookies),
     first_seen_at: clampString(raw.first_seen_at, 40) ?? new Date().toISOString(),
     last_seen_at: clampString(raw.last_seen_at, 40),
     ip: clampString(raw.ip, 64),

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Attribution, UtmParams } from "@/lib/attribution";
+import { isAttributionCookie, type Attribution, type UtmParams } from "@/lib/attribution";
 
 const ATTR_KEY = "esm_attr_v1";
 const VISITOR_KEY = "esm_vid";
@@ -67,6 +67,18 @@ function parseGaSessionId(gaSession?: string): string | undefined {
   const parts = gaSession.split(".");
   if (parts.length >= 3 && /^\d+$/.test(parts[2])) return parts[2];
   return undefined;
+}
+
+function collectAttributionCookies(): Record<string, string> | undefined {
+  if (typeof document === "undefined") return undefined;
+  const out: Record<string, string> = {};
+  for (const pair of document.cookie.split(";")) {
+    const [rawKey, ...rest] = pair.trim().split("=");
+    if (!rawKey || !isAttributionCookie(rawKey)) continue;
+    const value = rest.join("=");
+    if (value) out[rawKey] = value.slice(0, 300);
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 function detectDevice(): string {
@@ -159,6 +171,7 @@ export function captureAttribution(locale: string): Attribution {
     msclkid: params.get("msclkid")?.slice(0, 512) || stored?.msclkid,
     twclid: params.get("twclid")?.slice(0, 512) || stored?.twclid,
     utm: stored?.utm && Object.values(stored.utm).some(Boolean) ? stored.utm : collectUtm(params),
+    cookies: collectAttributionCookies() ?? stored?.cookies,
     referrer: stored?.referrer ?? document.referrer ?? undefined,
     landing_url: stored?.landing_url ?? window.location.href,
     current_url: window.location.href,

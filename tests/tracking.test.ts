@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasPaidClick, sanitizeAttribution } from "@/lib/attribution";
+import { hasPaidClick, sanitizeAttribution, sanitizeCookies } from "@/lib/attribution";
 import { hashExternalId, hashPhone, normalizePhone } from "@/lib/hash";
 import { resolveStage } from "@/lib/meta/events";
 import { signPayload, verifySignature } from "@/lib/signature";
@@ -41,6 +41,23 @@ describe("attribution", () => {
       utm: { campaign: "a\u0000b\nc" },
     });
     expect(attr?.utm.campaign).toBe("abc");
+  });
+});
+
+describe("attribution cookies", () => {
+  it("keeps only known advertising cookies", () => {
+    const cookies = sanitizeCookies({
+      _gcl_au: "1.1.123",
+      _ttp: "abc",
+      _ga: "GA1.1.1.1",
+      sessionid: "secret",
+    });
+    expect(cookies).toEqual({ _gcl_au: "1.1.123", _ttp: "abc" });
+  });
+
+  it("drops oversized values and empty objects", () => {
+    expect(sanitizeCookies({ _ttp: "x".repeat(900) })?.["_ttp"].length).toBe(300);
+    expect(sanitizeCookies({ nope: "1" })).toBeUndefined();
   });
 });
 
